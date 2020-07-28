@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chat WebSocket</title>
+        <script type="text/javascript">
+            let socketConnection;
+
+            function connect() {
+                socketConnection = new WebSocket("ws://localhost:8080/");//, ["protocolOne", "protocolTwo"]);
+                socketConnection.onopen = (event) => {
+                    console.log("Connection established with server.");
+                }
+
+                socketConnection.onclose = (event) => {
+                    console.log("Connection closed");
+                    console.log(event);
+                }
+
+                socketConnection.onerror = (event) => {
+                    console.log("Error occurred");
+                    console.log(event);
+                }
+
+                socketConnection.onmessage = (event) => {
+                    console.log("Received message");
+                    console.log(event);
+                }
+            }
+
+            function disconnect() {
+                if (socketConnection != null) {
+                    console.log("Disconnecting from server.");
+                    socketConnection.close();
+                }
+            }
+
+            function sendMessage() {
+                const from = "Atrum";
+                const text = document.getElementById('text').value;
+                const message = JSON.stringify({from, text});
+                socketConnection.send(message);
+            }
+        </script>
+    </head>
+
+    <body onload="disconnect()">
+        <div>
+            <div>
+                <input type="text" id="from" placeholder="Choose a nickname"/>
+            </div>
+            <br />
+            <div>
+                <button id="connect" onclick="connect();">Connect</button>
+                <button id="disconnect" disabled="disabled" onclick="disconnect();">Disconnect</button>
+            </div>
+            <br />
+            <div id="conversationDiv">
+                <input type="text" id="text" placeholder="Write a message..."/>
+                <button id="sendMessage" onclick="sendMessage();">Send</button>
+                <p id="response"></p>
+            </div>
+        </div>
+    </body>
+</html>
