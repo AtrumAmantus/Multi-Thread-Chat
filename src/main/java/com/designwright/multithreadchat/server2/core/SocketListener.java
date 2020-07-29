@@ -1,17 +1,11 @@
 package com.designwright.multithreadchat.server2.core;
 
 import com.designwright.multithreadchat.server2.exception.ServiceConnectionException;
-import com.google.common.io.CharStreams;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.net.SocketException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -63,13 +57,12 @@ public class SocketListener {
     }
 
     void readData(SocketConnection socket) {
-        //TODO: Read data from socket input stream
-//        try (Reader reader = new BufferedReader(new InputStreamReader(socket.getInputStream().read(), Charset.forName(StandardCharsets.UTF_8.name())))){
         try {
             Optional<String> input = socket.read();
             if (input.isPresent()) {
                 String text = input.get();
                 log.debug("Message pulled: " + text);
+                socket.write("{\"text\":\"You said '" + text + "'\"");
             }
         } catch (SocketException e) {
             log.error("Lost socket connection");

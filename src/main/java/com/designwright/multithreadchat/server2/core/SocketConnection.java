@@ -1,9 +1,12 @@
 package com.designwright.multithreadchat.server2.core;
 
-import com.designwright.multithreadchat.server2.core.protocol.http.HttpDecoder;
 import com.designwright.multithreadchat.server2.core.protocol.ProtocolDecoder;
+import com.designwright.multithreadchat.server2.core.protocol.ProtocolEncoder;
 import com.designwright.multithreadchat.server2.core.protocol.ProtocolVersion;
+import com.designwright.multithreadchat.server2.core.protocol.http.HttpDecoder;
+import com.designwright.multithreadchat.server2.core.protocol.http.HttpEncoder;
 import com.designwright.multithreadchat.server2.core.protocol.websocket.WebsocketDecoder;
+import com.designwright.multithreadchat.server2.core.protocol.websocket.WebsocketEncoder;
 import com.designwright.multithreadchat.server2.exception.ServiceConnectionException;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
+import java.nio.BufferOverflowException;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Optional;
@@ -30,6 +33,7 @@ public class SocketConnection implements Closeable {
     private final InputStream inputStream;
     private final OutputStream outputStream;
     private final Map<ProtocolVersion, ProtocolDecoder> decoders;
+    private final Map<ProtocolVersion, ProtocolEncoder> encoders;
 
     public SocketConnection(Socket socket) {
         this.socket = socket;
@@ -37,6 +41,9 @@ public class SocketConnection implements Closeable {
         decoders = new EnumMap<>(ProtocolVersion.class);
         decoders.put(ProtocolVersion.HTTP_1_1, new HttpDecoder());
         decoders.put(ProtocolVersion.WEBSOCKET_X, new WebsocketDecoder());
+        encoders = new EnumMap<>(ProtocolVersion.class);
+        encoders.put(ProtocolVersion.HTTP_1_1, new HttpEncoder());
+        encoders.put(ProtocolVersion.WEBSOCKET_X, new WebsocketEncoder());
         try {
             inputStream = socket.getInputStream();
             outputStream = socket.getOutputStream();
@@ -66,8 +73,12 @@ public class SocketConnection implements Closeable {
     }
 
     public void write(String message) throws IOException {
-        byte[] byteMessage = message.getBytes(StandardCharsets.UTF_8.name());
-        outputStream.write(byteMessage, 0, byteMessage.length);
+        try {
+            byte[] byteMessage = encoders.get(protocolInUse).encode(message);
+            outputStream.write(byteMessage, 0, byteMessage.length);
+        } catch (BufferOverflowException e) {
+            throw new IOException(e);
+        }
     }
 
     @Override

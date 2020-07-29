@@ -38,6 +38,8 @@ public class WebSocketConnection implements Runnable {
             log.error("HttpRequestException occurred", e);
         } catch (NoSuchAlgorithmException e) {
             log.error("Invalid hashing algorithm", e);
+        } catch (Exception e) {
+            log.error("Uncaught exception", e);
         }
     }
 
@@ -50,6 +52,7 @@ public class WebSocketConnection implements Runnable {
             if (HttpMethod.GET.equals(request.getMethod())) {
                 log.debug("Connection request made with GET");
                 upgradeConnection(request, socket);
+                socket.write("{\"text\":\"Welcome to the server!\"}");
                 socketListener.addSocket(socket);
             } else {
                 log.debug("Connection request rejected, not GET");

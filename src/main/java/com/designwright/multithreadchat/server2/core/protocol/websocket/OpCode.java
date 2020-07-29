@@ -1,8 +1,7 @@
 package com.designwright.multithreadchat.server2.core.protocol.websocket;
 
-import lombok.RequiredArgsConstructor;
+import lombok.Getter;
 
-@RequiredArgsConstructor
 public enum OpCode {
     TEXT(1),
     BINARY(2),
@@ -11,13 +10,18 @@ public enum OpCode {
     PONG(10),
     UNKNOWN(-1);
 
-    private final int opCode;
+    @Getter
+    private final int code;
+
+    OpCode(int code) {
+        this.code = code;
+    }
 
     public static OpCode getValueOf(int value) {
         OpCode opCode = UNKNOWN;
 
         for (OpCode opCode1 : OpCode.values()) {
-            if (opCode1.opCode == value) {
+            if (opCode1.code == value) {
                 opCode = opCode1;
             }
         }

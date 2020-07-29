@@ -22,6 +22,7 @@ public class WebsocketDecoder implements ProtocolDecoder {
                 byte[] mask;
                 int payloadOffset;
                 long dataLength = 0;
+                //TODO: Rework to accommodate large payload sizes in a ByteBuffer
                 if (payloadLength == 126) {
                     mask = new byte[] { encodedData[4], encodedData[5], encodedData[6], encodedData[7] };
                     payloadOffset = 8;
@@ -43,7 +44,7 @@ public class WebsocketDecoder implements ProtocolDecoder {
                 if (encodedData.length < dataLength) {
                     decodedData = ByteBuffer.allocate(0);
                 } else {
-                    decodedData = ByteBuffer.allocate((int) dataLength);
+                    decodedData = ByteBuffer.allocate(payloadLength);
                     for (int i = payloadOffset; i < dataLength; ++i) {
                         if (isMasked) {
                             int j = i - payloadOffset;
