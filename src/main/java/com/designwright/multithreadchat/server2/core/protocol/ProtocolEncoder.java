@@ -2,8 +2,8 @@ package com.designwright.multithreadchat.server2.core.protocol;
 
 import java.io.UnsupportedEncodingException;
 
-public interface ProtocolEncoder {
+public interface ProtocolEncoder<T> {
 
-    byte[] encode(String message) throws UnsupportedEncodingException;
+    byte[] encode(T t) throws UnsupportedEncodingException;
 
 }

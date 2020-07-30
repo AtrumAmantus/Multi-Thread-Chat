@@ -26,9 +26,15 @@ public class HttpRequest {
     @ToString.Exclude
     private final String data;
 
-    public HttpRequest(String data) {
+    private HttpRequest(String data) {
         this.headers = new HashMap<>();
         this.data = data;
+    }
+
+    public static HttpRequest create(String data) {
+        HttpRequest httpRequest = new HttpRequest(data);
+        httpRequest.parseData();
+        return httpRequest;
     }
 
     public String getHeader(HttpHeader httpHeader) {

@@ -89,4 +89,24 @@ public class testTest {
         System.out.println(new String(decodedData.array()));
     }
 
+    @Test
+    public void testTestTest() {
+        byte x = -128;
+        System.out.println(bits(x));
+        byte y = (byte)(x >> 4);
+        System.out.println(bits(y));
+        boolean is = x < 0;
+        boolean is2 = y < 0;
+        boolean is3 = (byte)(x << 1) >= 0;
+        byte a = 60;
+        byte b = (byte)~a;
+        System.out.println(bits(a));
+        System.out.println(bits(b));
+        int z = 0;
+    }
+
+    private String bits(byte b) {
+        return String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0');
+    }
+
 }

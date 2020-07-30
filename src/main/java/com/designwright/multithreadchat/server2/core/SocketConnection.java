@@ -2,11 +2,6 @@ package com.designwright.multithreadchat.server2.core;
 
 import com.designwright.multithreadchat.server2.core.protocol.ProtocolDecoder;
 import com.designwright.multithreadchat.server2.core.protocol.ProtocolEncoder;
-import com.designwright.multithreadchat.server2.core.protocol.ProtocolVersion;
-import com.designwright.multithreadchat.server2.core.protocol.http.HttpDecoder;
-import com.designwright.multithreadchat.server2.core.protocol.http.HttpEncoder;
-import com.designwright.multithreadchat.server2.core.protocol.websocket.WebsocketDecoder;
-import com.designwright.multithreadchat.server2.core.protocol.websocket.WebsocketEncoder;
 import com.designwright.multithreadchat.server2.exception.ServiceConnectionException;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
@@ -19,31 +14,23 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.BufferOverflowException;
-import java.util.EnumMap;
-import java.util.Map;
 import java.util.Optional;
 
 @RequiredArgsConstructor
 @EqualsAndHashCode
 @Slf4j
-public class SocketConnection implements Closeable {
+public abstract class SocketConnection<T, R> implements Closeable {
 
-    private ProtocolVersion protocolInUse;
     private final Socket socket;
     private final InputStream inputStream;
     private final OutputStream outputStream;
-    private final Map<ProtocolVersion, ProtocolDecoder> decoders;
-    private final Map<ProtocolVersion, ProtocolEncoder> encoders;
+    protected final ProtocolDecoder<T> decoder;
+    protected final ProtocolEncoder<R> encoder;
 
-    public SocketConnection(Socket socket) {
+    public SocketConnection(Socket socket, ProtocolDecoder<T> decoder, ProtocolEncoder<R> encoder) {
         this.socket = socket;
-        protocolInUse = ProtocolVersion.HTTP_1_1;
-        decoders = new EnumMap<>(ProtocolVersion.class);
-        decoders.put(ProtocolVersion.HTTP_1_1, new HttpDecoder());
-        decoders.put(ProtocolVersion.WEBSOCKET_X, new WebsocketDecoder());
-        encoders = new EnumMap<>(ProtocolVersion.class);
-        encoders.put(ProtocolVersion.HTTP_1_1, new HttpEncoder());
-        encoders.put(ProtocolVersion.WEBSOCKET_X, new WebsocketEncoder());
+        this.encoder = encoder;
+        this.decoder = decoder;
         try {
             inputStream = socket.getInputStream();
             outputStream = socket.getOutputStream();
@@ -52,8 +39,16 @@ public class SocketConnection implements Closeable {
         }
     }
 
-    public Optional<String> read() throws IOException {
-        Optional<String> content;
+    public SocketConnection(SocketConnection<?,?> socket, ProtocolDecoder<T> decoder, ProtocolEncoder<R> encoder) {
+        this.socket = socket.socket;
+        this.inputStream = socket.inputStream;
+        this.outputStream = socket.outputStream;
+        this.encoder = encoder;
+        this.decoder = decoder;
+    }
+
+    public Optional<T> read() throws IOException {
+        Optional<T> content;
         byte[] buffer = new byte[4096];
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
@@ -63,7 +58,7 @@ public class SocketConnection implements Closeable {
         }
 
         if (out.size() > 0) {
-            content = Optional.of(decoders.get(protocolInUse).decode(out));
+            content = Optional.of(decoder.decode(out));
         } else {
             content = Optional.empty();
         }
@@ -72,9 +67,9 @@ public class SocketConnection implements Closeable {
         return content;
     }
 
-    public void write(String message) throws IOException {
+    public void write(R object) throws IOException {
         try {
-            byte[] byteMessage = encoders.get(protocolInUse).encode(message);
+            byte[] byteMessage = encoder.encode(object);
             outputStream.write(byteMessage, 0, byteMessage.length);
         } catch (BufferOverflowException e) {
             throw new IOException(e);
@@ -97,7 +92,4 @@ public class SocketConnection implements Closeable {
         }
     }
 
-    public void upgradeConnection() {
-        protocolInUse = ProtocolVersion.WEBSOCKET_X;
-    }
 }

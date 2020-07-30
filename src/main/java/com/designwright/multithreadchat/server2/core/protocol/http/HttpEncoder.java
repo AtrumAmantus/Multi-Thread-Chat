@@ -5,11 +5,11 @@ import com.designwright.multithreadchat.server2.core.protocol.ProtocolEncoder;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 
-public class HttpEncoder implements ProtocolEncoder {
+public class HttpEncoder implements ProtocolEncoder<HttpResponse> {
 
     @Override
-    public byte[] encode(String message) throws UnsupportedEncodingException {
-        return message.getBytes(StandardCharsets.UTF_8.name());
+    public byte[] encode(HttpResponse response) throws UnsupportedEncodingException {
+        return response.getAsBytes(StandardCharsets.UTF_8);
     }
 
 }

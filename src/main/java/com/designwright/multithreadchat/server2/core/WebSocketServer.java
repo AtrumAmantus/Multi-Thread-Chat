@@ -2,7 +2,6 @@ package com.designwright.multithreadchat.server2.core;
 
 import com.designwright.multithreadchat.server2.exception.InternalServiceException;
 import lombok.Data;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -19,15 +18,15 @@ import java.util.concurrent.TimeUnit;
 public class WebSocketServer {
 
     private ExecutorService clientExecutor;
-    private WebSocketConnectionFactory webSocketConnectionFactory;
-    private SocketListener socketListener;
+    private ConnectionFactory connectionFactory;
+    private WebSocketListener webSocketListener;
     private final int port;
     private boolean keepRunning;
 
-    public WebSocketServer(WebSocketConnectionFactory webSocketConnectionFactory, int port) {
+    public WebSocketServer(ConnectionFactory connectionFactory, int port) {
         BlockingQueue<Runnable> boundedQueue = new ArrayBlockingQueue<>(1000);
         this.clientExecutor = new ThreadPoolExecutor(10, 20, 60, TimeUnit.SECONDS, boundedQueue, new ThreadPoolExecutor.AbortPolicy());
-        this.webSocketConnectionFactory = webSocketConnectionFactory;
+        this.connectionFactory = connectionFactory;
         this.port = port;
         keepRunning = true;
     }
@@ -38,7 +37,7 @@ public class WebSocketServer {
             @Override
             public void run() {
                 try {
-                    socketListener.run();
+                    webSocketListener.run();
                 } catch (InterruptedException e) {
                     // Exit the thread loop
                 }
@@ -67,8 +66,8 @@ public class WebSocketServer {
     void acceptClientConnections(ServerSocket server) {
         do {
             try {
-                Socket client = server.accept();
-                clientExecutor.submit(webSocketConnectionFactory.webSocketConnection(client));
+                Socket socket = server.accept();
+                clientExecutor.submit(connectionFactory.connection(socket));
             } catch (IOException e) {
                 log.error("Client failed to connect", e);
             }

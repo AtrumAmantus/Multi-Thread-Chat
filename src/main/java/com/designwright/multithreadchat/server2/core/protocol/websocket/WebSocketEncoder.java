@@ -4,20 +4,19 @@ import com.designwright.multithreadchat.server2.core.protocol.ProtocolEncoder;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
-public class WebsocketEncoder implements ProtocolEncoder {
+public class WebSocketEncoder implements ProtocolEncoder<WebSocketPacket> {
 
     private static final int BITS_16 = 65_535;
     private static final int BITS_8 = 125;
 
     @Override
-    public byte[] encode(String message) throws UnsupportedEncodingException {
+    public byte[] encode(WebSocketPacket packet) throws UnsupportedEncodingException {
         int dataLength;
-        byte[] decodedData = message.getBytes(StandardCharsets.UTF_8.name());
-        OpCode opCode = OpCode.TEXT;
-        boolean isMasked = false;
+        byte[] decodedData = packet.getPayload();
+        OpCode opCode = packet.getOpCode();
+        boolean isMasked = packet.isMasked();
 
         byte[] payloadLengthBytes;
 
@@ -34,7 +33,6 @@ public class WebsocketEncoder implements ProtocolEncoder {
             payloadLengthBytes = new byte[] {
                     (byte)(maskedBit | 126),
                     (byte)((decodedData.length >> 8) & 127),
-                    (byte)((decodedData.length >> 16) & 127),
                     (byte)(decodedData.length & 127)
             };
         } else {

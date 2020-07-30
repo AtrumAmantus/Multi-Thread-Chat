@@ -1,5 +1,7 @@
 package com.designwright.multithreadchat.server2.core;
 
+import com.designwright.multithreadchat.server2.core.protocol.websocket.OpCode;
+import com.designwright.multithreadchat.server2.core.protocol.websocket.WebSocketPacket;
 import com.designwright.multithreadchat.server2.exception.ServiceConnectionException;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -12,12 +14,12 @@ import java.util.Optional;
 
 @EqualsAndHashCode
 @Slf4j
-public class SocketListener {
+public class WebSocketListener {
 
     private boolean processSockets;
-    private final List<SocketConnection> sockets;
+    private final List<WebSocketConnection> sockets;
 
-    public SocketListener(List<SocketConnection> sockets) {
+    public WebSocketListener(List<WebSocketConnection> sockets) {
         this.sockets = sockets;
     }
 
@@ -37,12 +39,12 @@ public class SocketListener {
         }
     }
 
-    public void addSocket(SocketConnection socket) {
+    public void addSocket(WebSocketConnection socket) {
         sockets.add(socket);
     }
 
-    void readData(List<SocketConnection> sockets) {
-        for (SocketConnection socket : sockets) {
+    void readData(List<WebSocketConnection> sockets) {
+        for (WebSocketConnection socket : sockets) {
             try {
                 readData(socket);
             } catch (ServiceConnectionException e) {
@@ -56,13 +58,20 @@ public class SocketListener {
         }
     }
 
-    void readData(SocketConnection socket) {
+    void readData(WebSocketConnection socket) {
         try {
-            Optional<String> input = socket.read();
+            Optional<WebSocketPacket> input = socket.read();
             if (input.isPresent()) {
-                String text = input.get();
+                String text = new String(input.get().getPayload());
                 log.debug("Message pulled: " + text);
-                socket.write("{\"text\":\"You said '" + text + "'\"");
+                socket.write(
+                        WebSocketPacket.createPacket(
+                                true,
+                                OpCode.TEXT,
+                                false,
+                                ("{\"text\":\"You said, '" + text + "'\"}").getBytes()
+                        )
+                );
             }
         } catch (SocketException e) {
             log.error("Lost socket connection");
@@ -79,8 +88,8 @@ public class SocketListener {
 
     void shutdownSockets() {
         log.debug("Closing socket connections");
-        Iterator<SocketConnection> iterator = sockets.iterator();
-        SocketConnection socket;
+        Iterator<WebSocketConnection> iterator = sockets.iterator();
+        WebSocketConnection socket;
         while (iterator.hasNext()) {
             socket = iterator.next();
             try {

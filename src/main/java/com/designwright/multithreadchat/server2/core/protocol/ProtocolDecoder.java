@@ -1,10 +1,9 @@
 package com.designwright.multithreadchat.server2.core.protocol;
 
 import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
 
-public interface ProtocolDecoder {
+public interface ProtocolDecoder<T> {
 
-    String decode(ByteArrayOutputStream stream);
+    T decode(ByteArrayOutputStream stream);
 
 }
