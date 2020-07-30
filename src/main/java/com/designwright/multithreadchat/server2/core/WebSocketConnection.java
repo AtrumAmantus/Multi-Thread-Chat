@@ -10,12 +10,12 @@ import java.net.Socket;
 @Slf4j
 public class WebSocketConnection extends SocketConnection<WebSocketPacket, WebSocketPacket> {
 
-    public WebSocketConnection(Socket socket) {
-        super(socket, new WebSocketDecoder(), new WebSocketEncoder());
+    public WebSocketConnection(Socket socket, ConnectionSession session) {
+        super(socket, session, new WebSocketDecoder(), new WebSocketEncoder());
     }
 
-    public WebSocketConnection(SocketConnection<?, ?> socket) {
-        super(socket, new WebSocketDecoder(), new WebSocketEncoder());
+    public WebSocketConnection(SocketConnection<?, ?> socket, ConnectionSession session) {
+        super(socket, session, new WebSocketDecoder(), new WebSocketEncoder());
     }
 
 }

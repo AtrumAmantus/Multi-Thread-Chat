@@ -4,6 +4,7 @@ import com.designwright.multithreadchat.server2.core.protocol.ProtocolDecoder;
 import com.designwright.multithreadchat.server2.core.protocol.ProtocolEncoder;
 import com.designwright.multithreadchat.server2.exception.ServiceConnectionException;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,9 +27,12 @@ public abstract class SocketConnection<T, R> implements Closeable {
     private final OutputStream outputStream;
     protected final ProtocolDecoder<T> decoder;
     protected final ProtocolEncoder<R> encoder;
+    @Getter
+    private final ConnectionSession session;
 
-    public SocketConnection(Socket socket, ProtocolDecoder<T> decoder, ProtocolEncoder<R> encoder) {
+    public SocketConnection(Socket socket, ConnectionSession session, ProtocolDecoder<T> decoder, ProtocolEncoder<R> encoder) {
         this.socket = socket;
+        this.session = session;
         this.encoder = encoder;
         this.decoder = decoder;
         try {
@@ -39,8 +43,9 @@ public abstract class SocketConnection<T, R> implements Closeable {
         }
     }
 
-    public SocketConnection(SocketConnection<?,?> socket, ProtocolDecoder<T> decoder, ProtocolEncoder<R> encoder) {
+    public SocketConnection(SocketConnection<?,?> socket, ConnectionSession session, ProtocolDecoder<T> decoder, ProtocolEncoder<R> encoder) {
         this.socket = socket.socket;
+        this.session = session;
         this.inputStream = socket.inputStream;
         this.outputStream = socket.outputStream;
         this.encoder = encoder;

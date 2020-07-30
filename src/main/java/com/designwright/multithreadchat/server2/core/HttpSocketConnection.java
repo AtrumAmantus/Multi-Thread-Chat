@@ -10,7 +10,7 @@ import java.net.Socket;
 public class HttpSocketConnection extends SocketConnection<HttpRequest, HttpResponse> {
 
     public HttpSocketConnection(Socket socket) {
-        super(socket, new HttpDecoder(), new HttpEncoder());
+        super(socket, null, new HttpDecoder(), new HttpEncoder());
     }
 
 }

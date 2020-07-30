@@ -7,19 +7,20 @@ import java.util.stream.Stream;
 
 public enum HttpHeader {
 
-    HOST("Host"),
-    CONNECTION("Connection"),
-    PRAGMA("Pragma"),
-    CACHE_CONTROL("Cache-Control"),
-    USER_AGENT("User-Agent"),
-    UPGRADE("Upgrade"),
-    ORIGIN("Origin"),
-    SEC_WEBSOCKET_VERSION("Sec-WebSocket-Version"),
     ACCEPT_ENCODING("Accept-Encoding"),
     ACCEPT_LANGUAGE("Accept-Language"),
+    AUTHORIZATION("Authorization"),
+    CACHE_CONTROL("Cache-Control"),
+    CONNECTION("Connection"),
+    HOST("Host"),
+    ORIGIN("Origin"),
+    PRAGMA("Pragma"),
     SEC_WEBSOCKET_ACCEPT("Sec-WebSocket-Accept"),
     SEC_WEBSOCKET_EXTENSIONS("Sec-WebSocket-Extensions"),
-    SEC_WEBSOCKET_KEY("Sec-WebSocket-Key");
+    SEC_WEBSOCKET_KEY("Sec-WebSocket-Key"),
+    SEC_WEBSOCKET_VERSION("Sec-WebSocket-Version"),
+    UPGRADE("Upgrade"),
+    USER_AGENT("User-Agent");
 
     private final String prettyName;
 

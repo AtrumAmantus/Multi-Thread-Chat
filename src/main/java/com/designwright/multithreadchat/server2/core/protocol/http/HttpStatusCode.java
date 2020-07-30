@@ -8,7 +8,9 @@ import java.util.stream.Stream;
 public enum HttpStatusCode {
 
     SWITCHING_PROTOCOLS(101, "Switching Protocols"),
-    OK(200, "OK");
+    OK(200, "OK"),
+    METHOD_NOT_ALLOWED(405, "Method Not Allowed"),
+    UNAUTHORIZED(401, "Unauthorized");
 
     private final int code;
     private final String message;

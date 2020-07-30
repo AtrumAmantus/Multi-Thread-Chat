@@ -8,9 +8,15 @@ import com.designwright.multithreadchat.server2.core.protocol.http.HttpStatusCod
 import com.designwright.multithreadchat.server2.core.protocol.ProtocolVersion;
 import com.designwright.multithreadchat.server2.core.protocol.websocket.OpCode;
 import com.designwright.multithreadchat.server2.core.protocol.websocket.WebSocketPacket;
+import com.designwright.multithreadchat.server2.data.domain.User;
+import com.designwright.multithreadchat.server2.exception.AuthorizationException;
 import com.designwright.multithreadchat.server2.exception.HttpRequestException;
+import com.designwright.multithreadchat.server2.exception.ResourceNotFoundException;
+import com.designwright.multithreadchat.server2.service.AuthorizationService;
+import com.designwright.multithreadchat.server2.service.UserService;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -27,6 +33,8 @@ public class Connection implements Runnable {
 
     private final HttpSocketConnection socketConnection;
     private final WebSocketListener webSocketListener;
+    private final UserService userService;
+    private final AuthorizationService authorizationService;
 
     @Override
     public void run() {
@@ -48,27 +56,80 @@ public class Connection implements Runnable {
         if (input.isPresent()) {
             HttpRequest request = input.get();
 
-            if (HttpMethod.GET.equals(request.getMethod())) {
-                log.debug("Connection request made with GET");
-                WebSocketConnection webSocketConnection = upgradeConnection(request, socket);
-                webSocketConnection.write(
-                        WebSocketPacket.createPacket(
-                                true,
-                                OpCode.TEXT,
-                                false,
-                                "{\"text\":\"Welcome to the server!\"}".getBytes()
-                        )
-                );
-                webSocketListener.addSocket(new WebSocketConnection(socket));
+            String authorization = request.getUri().substring(1); // remove leading /
+            if (!StringUtils.isEmpty(authorization)) {
+                ConnectionSession session = authorizeConnection(authorization);
+                if (session.isValid()) {
+                    if (HttpMethod.GET.equals(request.getMethod())) {
+                        log.debug("Connection request made with GET");
+                        WebSocketConnection webSocketConnection = upgradeConnection(request, socket, session);
+                        webSocketConnection.write(
+                                WebSocketPacket.createPacket(
+                                        true,
+                                        OpCode.TEXT,
+                                        false,
+                                        "{\"text\":\"Welcome to the server!\"}".getBytes()
+                                )
+                        );
+                        webSocketListener.addSocket(webSocketConnection);
+                        log.debug("User connected");
+                    } else {
+                        log.debug("Connection request rejected, not GET");
+                        socket.write(methodNotAllowedHttpResponse());
+                        socket.close();
+                    }
+                } else {
+                    log.debug("Invalid authorization");
+                    socket.write(unauthorizedHttpResponse());
+                    socket.close();
+                }
             } else {
-                log.debug("Connection request rejected, not GET");
+                log.debug("Unauthorized user, no auth header");
+                socket.write(unauthorizedHttpResponse());
+                socket.close();
             }
         } else {
             throw new HttpRequestException("Request contained no input");
         }
     }
 
-    WebSocketConnection upgradeConnection(HttpRequest request, HttpSocketConnection socket) throws IOException, NoSuchAlgorithmException {
+    private ConnectionSession authorizeConnection(String authorization) {
+        ConnectionSession connectionSession;
+        String decoded = new String(Base64.getDecoder().decode(authorization));
+        String[] bits = decoded.split(":");
+
+        if (bits.length == 2) {
+            try {
+                User user = authorizeUser(bits[0], bits[1]);
+                connectionSession = ConnectionSession.create(user);
+            } catch (AuthorizationException e) {
+                log.debug("Could not authorize user: " + e.getMessage());
+                connectionSession = ConnectionSession.INVALID;
+            }
+        } else {
+            connectionSession = ConnectionSession.INVALID;
+        }
+
+        return connectionSession;
+    }
+
+    private User authorizeUser(String email, String password) {
+        User user;
+
+        try {
+            if (authorizationService.authorize(email, password)) {
+                user = userService.getUserByEmail(email);
+            } else {
+                throw new AuthorizationException("Invalid Credentials");
+            }
+        } catch (ResourceNotFoundException e) {
+            throw new AuthorizationException("User does not exist");
+        }
+
+        return user;
+    }
+
+    WebSocketConnection upgradeConnection(HttpRequest request, HttpSocketConnection socket, ConnectionSession session) throws IOException, NoSuchAlgorithmException {
         String socketAcceptValue = Base64.getEncoder()
                 .encodeToString(
                         MessageDigest.getInstance("SHA-1")
@@ -88,7 +149,22 @@ public class Connection implements Runnable {
 
         socket.write(response);
 
-        return new WebSocketConnection(socket);
+        return new WebSocketConnection(socket, session);
+    }
+
+    public HttpResponse unauthorizedHttpResponse() throws NoSuchAlgorithmException {
+        return httpResponse(HttpStatusCode.UNAUTHORIZED);
+    }
+
+    public HttpResponse methodNotAllowedHttpResponse() throws NoSuchAlgorithmException {
+        return httpResponse(HttpStatusCode.METHOD_NOT_ALLOWED);
+    }
+
+    public HttpResponse httpResponse(HttpStatusCode code) {
+        return  HttpResponse.builder()
+                .withProtocolVersion(ProtocolVersion.HTTP_1_1)
+                .withHttpStatusCode(code)
+                .build();
     }
 
 }

@@ -6,7 +6,10 @@
             let socketConnection;
 
             function connect() {
-                socketConnection = new WebSocket("ws://localhost:8080/");//, ["protocolOne", "protocolTwo"]);
+                const username = document.querySelector('#username').value;
+                const password = document.querySelector('#password').value;
+                const auth = btoa(username + ":" + password);
+                socketConnection = new WebSocket("ws://localhost:8080/" + auth);//, ["protocolOne", "protocolTwo"]);
                 socketConnection.onopen = (event) => {
                     console.log("Connection established with server.");
                 }
@@ -46,7 +49,8 @@
     <body onload="disconnect()">
         <div>
             <div>
-                <input type="text" id="from" placeholder="Choose a nickname"/>
+                <input type="text" id="username" placeholder="Username"/>
+                <input type="text" id="password" placeholder="Password"/>
             </div>
             <br />
             <div>
