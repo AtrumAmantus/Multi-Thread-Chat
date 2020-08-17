@@ -2,11 +2,13 @@ package com.designwright.multithreadchat.server2.data.repository;
 
 import com.designwright.multithreadchat.server2.data.entity.UserEntity;
 import com.designwright.multithreadchat.server2.exception.ResourceNotFoundException;
+import com.designwright.multithreadchat.server2.loader.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Component
 public class UserRepositoryImpl implements UserRepository {
 
     private final List<UserEntity> users;

@@ -2,9 +2,11 @@ package com.designwright.multithreadchat.server2.service;
 
 import com.designwright.multithreadchat.server2.data.entity.UserEntity;
 import com.designwright.multithreadchat.server2.data.repository.UserRepository;
+import com.designwright.multithreadchat.server2.loader.Component;
 import lombok.Data;
 
 @Data
+@Component
 public class AuthorizationService {
 
     private final UserRepository userRepository;

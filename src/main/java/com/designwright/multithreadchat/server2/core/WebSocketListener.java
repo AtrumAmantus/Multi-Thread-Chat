@@ -23,7 +23,7 @@ public class WebSocketListener {
         this.sockets = sockets;
     }
 
-    public void run() throws InterruptedException {
+    public void run() {
         processSockets = true;
 
         try {
@@ -34,6 +34,12 @@ public class WebSocketListener {
                 readData(sockets);
                 Thread.sleep(1);
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            if (log.isDebugEnabled()) {
+                log.debug("Thread interrupted for WebSocketListener");
+            }
+            // Proceed to shut down.
         } finally {
             shutdownSockets();
         }
@@ -82,7 +88,9 @@ public class WebSocketListener {
     }
 
     public void shutdown() {
-        log.debug("Shutting down socket listener");
+        if (log.isDebugEnabled()) {
+            log.debug("Shutting down WebSocketListener");
+        }
         processSockets = false;
     }
 

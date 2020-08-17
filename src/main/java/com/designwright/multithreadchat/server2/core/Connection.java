@@ -16,7 +16,7 @@ import com.designwright.multithreadchat.server2.service.AuthorizationService;
 import com.designwright.multithreadchat.server2.service.UserService;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -49,6 +49,9 @@ public class Connection implements Runnable {
         } catch (Exception e) {
             log.error("Uncaught exception", e);
         }
+        if (log.isDebugEnabled()) {
+            log.debug("Connection created successfully");
+        }
     }
 
     void createConnection(HttpSocketConnection socket) throws IOException, NoSuchAlgorithmException {
@@ -72,7 +75,9 @@ public class Connection implements Runnable {
                                 )
                         );
                         webSocketListener.addSocket(webSocketConnection);
-                        log.debug("User connected");
+                        if (log.isDebugEnabled()) {
+                            log.debug("User connected");
+                        }
                     } else {
                         log.debug("Connection request rejected, not GET");
                         socket.write(methodNotAllowedHttpResponse());
@@ -152,11 +157,11 @@ public class Connection implements Runnable {
         return new WebSocketConnection(socket, session);
     }
 
-    public HttpResponse unauthorizedHttpResponse() throws NoSuchAlgorithmException {
+    public HttpResponse unauthorizedHttpResponse() {
         return httpResponse(HttpStatusCode.UNAUTHORIZED);
     }
 
-    public HttpResponse methodNotAllowedHttpResponse() throws NoSuchAlgorithmException {
+    public HttpResponse methodNotAllowedHttpResponse() {
         return httpResponse(HttpStatusCode.METHOD_NOT_ALLOWED);
     }
 
